@@ -97,7 +97,7 @@ elif menu == "🧍 Doadores":
                     conn.execute("DELETE FROM doadores WHERE id = ?", (id_doador,))
                     conn.commit()
                 st.success("Doador removido com sucesso! 🗑️")
-                st.experimental_rerun()
+                st.info("Atualize a página para ver a lista atualizada.")
             except Exception as e:
                 st.error(f"Erro ao remover doador: {e}")
     else:
@@ -144,7 +144,7 @@ elif menu == "🏥 Hemocentros":
                     conn.execute("DELETE FROM hemocentros WHERE id = ?", (id_hemocentro,))
                     conn.commit()
                 st.success("Hemocentro removido com sucesso! 🗑️")
-                st.experimental_rerun()
+                st.info("Atualize a página para ver a lista atualizada.")
             except Exception as e:
                 st.error(f"Erro ao remover hemocentro: {e}")
     else:
