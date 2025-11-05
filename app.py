@@ -2,11 +2,11 @@ import streamlit as st
 import sqlite3
 from datetime import datetime
 
-#Conexão com o BD
+# Conexão com o BD
 def conectar():
     return sqlite3.connect("banco_hemocentro.db")
 
-#Tabelas
+# Criar tabelas
 def criar_tabelas():
     with conectar() as conn:
         cursor = conn.cursor()
@@ -43,21 +43,19 @@ def criar_tabelas():
 
 criar_tabelas()
 
-
 # Layout principal
 st.set_page_config(page_title="Sistema de Hemocentros", page_icon="🩸")
 st.title("🩸 Sistema de Hemocentros")
 
 menu = st.sidebar.selectbox("Navegação", ["🏠 Início", "🧍 Doadores", "🏥 Hemocentros", "💉 Doações"])
 
-#Inicio
+# Início
 if menu == "🏠 Início":
     st.write("""
     ## Aqui você pode cadastrar doadores, hemocentros e registrar doações de sangue.
     """)
 
-
- # Doadores
+# Doadores
 elif menu == "🧍 Doadores":
     st.subheader("Cadastro de Doadores")
 
@@ -70,14 +68,16 @@ elif menu == "🧍 Doadores":
     if st.button("Salvar Doador"):
         if nome.strip():
             with conectar() as conn:
-                conn.execute("INSERT INTO doadores (nome, idade, tipo_sanguineo, cidade, telefone) VALUES (?, ?, ?, ?, ?)",
-                             (nome, idade, tipo, cidade, telefone))
+                conn.execute(
+                    "INSERT INTO doadores (nome, idade, tipo_sanguineo, cidade, telefone) VALUES (?, ?, ?, ?, ?)",
+                    (nome, idade, tipo, cidade, telefone)
+                )
                 conn.commit()
             st.success(f"Doador {nome} cadastrado com sucesso! ✅")
         else:
             st.warning("Digite um nome válido.")
 
-    st.divider()
+    st.markdown("---")
     st.subheader("Lista de Doadores")
 
     with conectar() as conn:
@@ -86,25 +86,24 @@ elif menu == "🧍 Doadores":
     if doadores:
         st.dataframe(doadores, use_container_width=True)
 
-
-        #Remover doador
         st.markdown("### Remover Doador")
         doador_ids = [f"{d[0]} - {d[1]}" for d in doadores]
         doador_remover = st.selectbox("Selecione o doador a remover", doador_ids)
 
-        if st.button("Remover Doador"):
-            id_doador = int(doador_remover.split(" - ")[0])
-            with conectar() as conn:
-                conn.execute("DELETE FROM doadores WHERE id = ?", (id_doador,))
-                conn.commit()
-            st.success("Doador removido com sucesso! 🗑️")
-            st.experimental_rerun()
-
+        if st.button("Remover Doador") and doador_remover:
+            try:
+                id_doador = int(doador_remover.split(" - ")[0])
+                with conectar() as conn:
+                    conn.execute("DELETE FROM doadores WHERE id = ?", (id_doador,))
+                    conn.commit()
+                st.success("Doador removido com sucesso! 🗑️")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"Erro ao remover doador: {e}")
     else:
         st.info("Nenhum doador cadastrado ainda.")
 
-
-  #Hemocentros
+# Hemocentros
 elif menu == "🏥 Hemocentros":
     st.subheader("Cadastro de Hemocentros")
 
@@ -116,14 +115,16 @@ elif menu == "🏥 Hemocentros":
     if st.button("Salvar Hemocentro"):
         if nome_h.strip():
             with conectar() as conn:
-                conn.execute("INSERT INTO hemocentros (nome, endereco, cidade, telefone) VALUES (?, ?, ?, ?)",
-                             (nome_h, endereco_h, cidade_h, telefone_h))
+                conn.execute(
+                    "INSERT INTO hemocentros (nome, endereco, cidade, telefone) VALUES (?, ?, ?, ?)",
+                    (nome_h, endereco_h, cidade_h, telefone_h)
+                )
                 conn.commit()
             st.success(f"Hemocentro {nome_h} cadastrado com sucesso! ✅")
         else:
             st.warning("Digite um nome válido.")
 
-    st.divider()
+    st.markdown("---")
     st.subheader("Lista de Hemocentros")
 
     with conectar() as conn:
@@ -132,25 +133,24 @@ elif menu == "🏥 Hemocentros":
     if hemocentros:
         st.dataframe(hemocentros, use_container_width=True)
 
-
-        # Remover hemocentro 
         st.markdown("### Remover Hemocentro")
         hemo_ids = [f"{h[0]} - {h[1]}" for h in hemocentros]
         hemo_remover = st.selectbox("Selecione o hemocentro a remover", hemo_ids)
 
-        if st.button("Remover Hemocentro"):
-            id_hemocentro = int(hemo_remover.split(" - ")[0])
-            with conectar() as conn:
-                conn.execute("DELETE FROM hemocentros WHERE id = ?", (id_hemocentro,))
-                conn.commit()
-            st.success("Hemocentro removido com sucesso! 🗑️")
-            st.experimental_rerun()
-
+        if st.button("Remover Hemocentro") and hemo_remover:
+            try:
+                id_hemocentro = int(hemo_remover.split(" - ")[0])
+                with conectar() as conn:
+                    conn.execute("DELETE FROM hemocentros WHERE id = ?", (id_hemocentro,))
+                    conn.commit()
+                st.success("Hemocentro removido com sucesso! 🗑️")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"Erro ao remover hemocentro: {e}")
     else:
         st.info("Nenhum hemocentro cadastrado ainda.")
 
-
-  #Doações
+# Doações
 elif menu == "💉 Doações":
     st.subheader("Registro de Doações")
 
@@ -169,12 +169,14 @@ elif menu == "💉 Doações":
             id_hemocentro = int(hemocentro_escolhido.split(" - ")[0])
             data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conectar() as conn:
-                conn.execute("INSERT INTO doacoes (id_doador, id_hemocentro, data_doacao) VALUES (?, ?, ?)",
-                             (id_doador, id_hemocentro, data))
+                conn.execute(
+                    "INSERT INTO doacoes (id_doador, id_hemocentro, data_doacao) VALUES (?, ?, ?)",
+                    (id_doador, id_hemocentro, data)
+                )
                 conn.commit()
             st.success("Doação registrada com sucesso! 💉")
 
-    st.divider()
+    st.markdown("---")
     st.subheader("Histórico de Doações")
     with conectar() as conn:
         registros = conn.execute('''
