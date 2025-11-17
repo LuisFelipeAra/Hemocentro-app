@@ -9,12 +9,10 @@ st.set_page_config(page_title="Sistema de Hemocentros", page_icon="🩸", layout
 
 st.markdown("""
     <style>
-        /* imagem de fundo */
         body {
             background-image: url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b');
             background-size: cover;
         }
-        /* fundo dos cards */
         .stApp {
             background: rgba(255, 255, 255, 0.80);
             backdrop-filter: blur(4px);
@@ -81,7 +79,6 @@ criar_tabelas()
 # ===========================
 #  LAYOUT
 # ===========================
-
 st.title("🩸 Sistema de Hemocentros")
 
 menu = st.sidebar.selectbox("Navegação", [
@@ -126,3 +123,41 @@ elif menu == "🧍 Doadores":
     st.subheader("Lista de Doadores")
 
     with conectar() as conn:
+        doadores = conn.execute("SELECT * FROM doadores").fetchall()
+
+    if doadores:
+        st.dataframe(doadores, use_container_width=True)
+
+        st.markdown("### Remover Doador")
+        selecionado = st.selectbox("Escolha", [f"{d[0]} - {d[1]}" for d in doadores])
+
+        if st.button("Remover"):
+            try:
+                id_d = int(selecionado.split(" - ")[0])
+                with conectar() as conn:
+                    conn.execute("DELETE FROM doadores WHERE id = ?", (id_d,))
+                    conn.commit()
+                st.success("Doador removido!")
+            except:
+                st.error("Erro ao remover.")
+    else:
+        st.info("Nenhum doador cadastrado.")
+
+# ===========================
+#  HEMOCENTROS
+# ===========================
+elif menu == "🏥 Hemocentros":
+    st.subheader("Cadastro de Hemocentros")
+
+    nome_h = st.text_input("Nome")
+    endereco_h = st.text_input("Endereço")
+    cidade_h = st.text_input("Cidade")
+    telefone_h = st.text_input("Telefone")
+
+    if st.button("Salvar Hemocentro"):
+        with conectar() as conn:
+            conn.execute(
+                "INSERT INTO hemocentros (nome, endereco, cidade, telefone) VALUES (?, ?, ?, ?)",
+                (nome_h, endereco_h, cidade_h, telefone_h)
+            )
+            conn.commit()
