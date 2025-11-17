@@ -16,11 +16,11 @@ st.markdown("""
             background-position: center;
         }
         .stApp {
-            background: rgba(255, 255, 255, 0.80);
-            backdrop-filter: blur(4px);
+            background: transparent !important;
         }
     </style>
 """, unsafe_allow_html=True)
+
 
 # ======================================
 #   BANCO DE DADOS
@@ -257,3 +257,4 @@ elif menu == "📦 Estoque":
             st.dataframe(tabela, use_container_width=True)
         else:
             st.info("Nenhum estoque registrado.")
+
