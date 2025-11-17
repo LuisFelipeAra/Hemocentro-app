@@ -2,9 +2,7 @@ import streamlit as st
 import sqlite3
 from datetime import datetime
 
-# ======================================
-#   IMAGEM DE FUNDO (APENAS ALTERAÇÃO)
-# ======================================
+#IMAGEM DE FUNDO
 st.set_page_config(page_title="Sistema de Hemocentros", page_icon="🩸", layout="wide")
 
 st.markdown("""
@@ -22,9 +20,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ======================================
-#   BANCO DE DADOS
-# ======================================
+
+#BD
 def conectar():
     return sqlite3.connect("banco_hemocentro.db")
 
@@ -78,9 +75,7 @@ def criar_tabelas():
 
 criar_tabelas()
 
-# ======================================
-#   LAYOUT
-# ======================================
+#LAYOUT
 st.title("🩸 Sistema de Hemocentros")
 
 menu = st.sidebar.selectbox(
@@ -88,15 +83,11 @@ menu = st.sidebar.selectbox(
     ["🏠 Início", "🧍 Doadores", "🏥 Hemocentros", "💉 Doações", "📦 Estoque"]
 )
 
-# ======================================
-#   INÍCIO
-# ======================================
+#INÍCIO
 if menu == "🏠 Início":
     st.markdown("### Bem-vindo ao Sistema de Gerenciamento de Hemocentros!")
 
-# ======================================
-#   DOADORES
-# ======================================
+#DOADORES
 elif menu == "🧍 Doadores":
     st.subheader("Cadastro de Doadores")
 
@@ -143,9 +134,7 @@ elif menu == "🧍 Doadores":
     else:
         st.info("Nenhum doador cadastrado.")
 
-# ======================================
-#   HEMOCENTROS
-# ======================================
+#HEMOCENTROS
 elif menu == "🏥 Hemocentros":
     st.subheader("Cadastro de Hemocentros")
 
@@ -173,9 +162,8 @@ elif menu == "🏥 Hemocentros":
     else:
         st.info("Nenhum hemocentro cadastrado.")
 
-# ======================================
-#   DOAÇÕES
-# ======================================
+
+#DOAÇÕES
 elif menu == "💉 Doações":
     st.subheader("Registro de Doações")
 
@@ -203,9 +191,7 @@ elif menu == "💉 Doações":
 
             st.success("Doação registrada!")
 
-# ======================================
-#   ESTOQUE
-# ======================================
+#ESTOQUE
 elif menu == "📦 Estoque":
     st.subheader("Estoque de Sangue")
 
@@ -257,4 +243,5 @@ elif menu == "📦 Estoque":
             st.dataframe(tabela, use_container_width=True)
         else:
             st.info("Nenhum estoque registrado.")
+
 
