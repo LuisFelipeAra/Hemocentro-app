@@ -40,7 +40,7 @@ def criar_tabelas():
                 tipo_sanguineo TEXT,
                 cidade TEXT,
                 telefone TEXT
-            )
+            );
         """)
 
         cursor.execute("""
@@ -50,7 +50,7 @@ def criar_tabelas():
                 endereco TEXT,
                 cidade TEXT,
                 telefone TEXT
-            )
+            );
         """)
 
         cursor.execute("""
@@ -60,4 +60,72 @@ def criar_tabelas():
                 id_hemocentro INTEGER,
                 data_doacao TEXT,
                 FOREIGN KEY(id_doador) REFERENCES doadores(id),
-                FOREIGN KEY(id_hemocentro) REFERENCES h_
+                FOREIGN KEY(id_hemocentro) REFERENCES hemocentros(id)
+            );
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS estoque (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_hemocentro INTEGER,
+                tipo_sanguineo TEXT NOT NULL,
+                quantidade INTEGER DEFAULT 0,
+                FOREIGN KEY(id_hemocentro) REFERENCES hemocentros(id)
+            );
+        """)
+
+        conn.commit()
+
+criar_tabelas()
+
+# ======================================
+#   LAYOUT
+# ======================================
+st.title("🩸 Sistema de Hemocentros")
+
+menu = st.sidebar.selectbox(
+    "Navegação",
+    ["🏠 Início", "🧍 Doadores", "🏥 Hemocentros", "💉 Doações", "📦 Estoque"]
+)
+
+# ======================================
+#   INÍCIO
+# ======================================
+if menu == "🏠 Início":
+    st.markdown("### Bem-vindo ao Sistema de Gerenciamento de Hemocentros!")
+
+# ======================================
+#   DOADORES
+# ======================================
+elif menu == "🧍 Doadores":
+    st.subheader("Cadastro de Doadores")
+
+    nome = st.text_input("Nome do Doador")
+    idade = st.number_input("Idade", min_value=18, max_value=100)
+    tipo = st.selectbox("Tipo Sanguíneo", ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+    cidade = st.text_input("Cidade")
+    telefone = st.text_input("Telefone")
+
+    if st.button("Salvar Doador"):
+        if nome.strip():
+            with conectar() as conn:
+                conn.execute(
+                    "INSERT INTO doadores (nome, idade, tipo_sanguineo, cidade, telefone) VALUES (?, ?, ?, ?, ?)",
+                    (nome, idade, tipo, cidade, telefone)
+                )
+                conn.commit()
+            st.success(f"Doador {nome} cadastrado com sucesso! ✅")
+        else:
+            st.warning("Digite um nome válido.")
+
+    st.markdown("---")
+    st.subheader("Lista de Doadores")
+
+    with conectar() as conn:
+        doadores = conn.execute("SELECT * FROM doadores").fetchall()
+
+    if doadores:
+        st.dataframe(doadores, use_container_width=True)
+
+        st.markdown("### Remover Doador")
+        selecionado = st.selectbox("
