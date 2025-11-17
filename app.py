@@ -2,15 +2,13 @@ import streamlit as st
 import sqlite3
 from datetime import datetime
 
-# ===========================
-#  CSS + IMAGEM DE FUNDO
-# ===========================
+#IMD DE FUNDO
 st.set_page_config(page_title="Sistema de Hemocentros", page_icon="🩸", layout="wide")
 
 st.markdown("""
     <style>
         body {
-            background-image: url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b');
+            background-image: url('https://media.istockphoto.com/id/1395646013/pt/foto/red-blood-cells-infected-by-viruses.jpg?s=612x612');
             background-size: cover;
         }
         .stApp {
@@ -20,9 +18,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ===========================
-#  BANCO DE DADOS
-# ===========================
+
+#BD
 def conectar():
     return sqlite3.connect("banco_hemocentro.db")
 
@@ -76,9 +73,8 @@ def criar_tabelas():
 
 criar_tabelas()
 
-# ===========================
-#  LAYOUT
-# ===========================
+
+#LAYOUT
 st.title("🩸 Sistema de Hemocentros")
 
 menu = st.sidebar.selectbox("Navegação", [
@@ -89,15 +85,13 @@ menu = st.sidebar.selectbox("Navegação", [
     "📦 Estoque"
 ])
 
-# ===========================
+
 #  INÍCIO
-# ===========================
 if menu == "🏠 Início":
     st.markdown("### Bem-vindo ao Sistema de Gerenciamento de Hemocentros!")
 
-# ===========================
-#  DOADORES
-# ===========================
+
+#DOADORES
 elif menu == "🧍 Doadores":
     st.subheader("Cadastro de Doadores")
 
@@ -143,9 +137,7 @@ elif menu == "🧍 Doadores":
     else:
         st.info("Nenhum doador cadastrado.")
 
-# ===========================
-#  HEMOCENTROS
-# ===========================
+# HEMOCENTROS
 elif menu == "🏥 Hemocentros":
     st.subheader("Cadastro de Hemocentros")
 
@@ -161,3 +153,96 @@ elif menu == "🏥 Hemocentros":
                 (nome_h, endereco_h, cidade_h, telefone_h)
             )
             conn.commit()
+        st.success("Hemocentro salvo!")
+
+    st.markdown("---")
+
+    with conectar() as conn:
+        hemocentros = conn.execute("SELECT * FROM hemocentros").fetchall()
+
+    if hemocentros:
+        st.dataframe(hemocentros, use_container_width=True)
+    else:
+        st.info("Nenhum hemocentro cadastrado.")
+
+#DOAÇÕES
+elif menu == "💉 Doações":
+    st.subheader("Registro de Doações")
+
+    with conectar() as conn:
+        doadores = conn.execute("SELECT id, nome FROM doadores").fetchall()
+        hemocentros = conn.execute("SELECT id, nome FROM hemocentros").fetchall()
+
+    if not doadores or not hemocentros:
+        st.warning("Cadastre ao menos um doador e um hemocentro.")
+    else:
+        d = st.selectbox("Doador", [f"{i[0]} - {i[1]}" for i in doadores])
+        h = st.selectbox("Hemocentro", [f"{i[0]} - {i[1]}" for i in hemocentros])
+
+        if st.button("Registrar Doação"):
+            id_d = int(d.split(" - ")[0])
+            id_h = int(h.split(" - ")[0])
+            data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            with conectar() as conn:
+                conn.execute(
+                    "INSERT INTO doacoes (id_doador, id_hemocentro, data_doacao) VALUES (?, ?, ?)",
+                    (id_d, id_h, data)
+                )
+                conn.commit()
+
+            st.success("Doação registrada!")
+
+
+#ESTOQUE
+elif menu == "📦 Estoque":
+    st.subheader("Estoque de Sangue")
+
+    with conectar() as conn:
+        hemocentros = conn.execute("SELECT id, nome FROM hemocentros").fetchall()
+
+    if not hemocentros:
+        st.warning("Cadastre um hemocentro primeiro.")
+    else:
+        h = st.selectbox("Hemocentro", [f"{i[0]} - {i[1]}" for i in hemocentros])
+        id_h = int(h.split(" - ")[0])
+
+        tipo = st.selectbox("Tipo Sanguíneo", ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+        qtd = st.number_input("Quantidade", min_value=1)
+
+        if st.button("Adicionar"):
+            with conectar() as conn:
+                ex = conn.execute(
+                    "SELECT quantidade FROM estoque WHERE id_hemocentro = ? AND tipo_sanguineo = ?",
+                    (id_h, tipo)
+                ).fetchone()
+
+                if ex:
+                    conn.execute(
+                        "UPDATE estoque SET quantidade = ? WHERE id_hemocentro = ? AND tipo_sanguineo = ?",
+                        (ex[0] + qtd, id_h, tipo)
+                    )
+                else:
+                    conn.execute(
+                        "INSERT INTO estoque (id_hemocentro, tipo_sanguineo, quantidade) VALUES (?, ?, ?)",
+                        (id_h, tipo, qtd)
+                    )
+                conn.commit()
+
+            st.success("Estoque atualizado!")
+
+        st.markdown("---")
+        st.subheader("📊 Estoque Atual")
+
+        with conectar() as conn:
+            tabela = conn.execute("""
+                SELECT hemocentros.nome, estoque.tipo_sanguineo, estoque.quantidade
+                FROM estoque
+                JOIN hemocentros ON hemocentros.id = estoque.id_hemocentro
+                WHERE hemocentros.id = ?
+            """, (id_h,)).fetchall()
+
+        if tabela:
+            st.dataframe(tabela, use_container_width=True)
+        else:
+            st.info("Nenhum estoque registrado.")
