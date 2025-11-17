@@ -33,10 +33,4 @@ def criar_tabelas():
         ''')
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS doacoes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_doador INTEGER,
-                id_hemocentro INTEGER,
-                data_doacao TEXT,
-                FOREIGN KEY(id_doador) REFERENCES doadores(id),
-                FOREIGN KEY(id
+            CREATE TA
