@@ -10,6 +10,7 @@ def conectar():
 def criar_tabelas():
     with conectar() as conn:
         cursor = conn.cursor()
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS doadores (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,6 +21,7 @@ def criar_tabelas():
                 telefone TEXT
             )
         ''')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS hemocentros (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +31,7 @@ def criar_tabelas():
                 telefone TEXT
             )
         ''')
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS doacoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,6 +42,18 @@ def criar_tabelas():
                 FOREIGN KEY(id_hemocentro) REFERENCES hemocentros(id)
             )
         ''')
+
+        # NOVA TABELA ESTOQUE
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS estoque (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_hemocentro INTEGER,
+                tipo_sanguineo TEXT NOT NULL,
+                quantidade INTEGER DEFAULT 0,
+                FOREIGN KEY(id_hemocentro) REFERENCES hemocentros(id)
+            )
+        ''')
+
         conn.commit()
 
 criar_tabelas()
@@ -47,7 +62,13 @@ criar_tabelas()
 st.set_page_config(page_title="Sistema de Hemocentros", page_icon="🩸")
 st.title("🩸 Sistema de Hemocentros")
 
-menu = st.sidebar.selectbox("Navegação", ["🏠 Início", "🧍 Doadores", "🏥 Hemocentros", "💉 Doações"])
+menu = st.sidebar.selectbox("Navegação", [
+    "🏠 Início",
+    "🧍 Doadores",
+    "🏥 Hemocentros",
+    "💉 Doações",
+    "📦 Estoque"
+])
 
 # Início
 if menu == "🏠 Início":
@@ -190,3 +211,89 @@ elif menu == "💉 Doações":
             st.dataframe(registros, use_container_width=True)
         else:
             st.info("Nenhuma doação registrada ainda.")
+
+# ESTOQUE
+elif menu == "📦 Estoque":
+    st.subheader("Gerenciamento de Estoque")
+
+    with conectar() as conn:
+        hemocentros = conn.execute("SELECT id, nome FROM hemocentros").fetchall()
+
+    if not hemocentros:
+        st.warning("Cadastre um hemocentro antes de usar o estoque.")
+    else:
+        hemo_escolhido = st.selectbox(
+            "Selecione o hemocentro",
+            [f"{h[0]} - {h[1]}" for h in hemocentros]
+        )
+
+        id_hemocentro = int(hemo_escolhido.split(" - ")[0])
+
+        st.markdown("### ➕ Adicionar ao Estoque")
+
+        tipo = st.selectbox("Tipo Sanguíneo", ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+        qtd = st.number_input("Quantidade a adicionar", min_value=1)
+
+        if st.button("Adicionar Estoque"):
+            with conectar() as conn:
+                existente = conn.execute(
+                    "SELECT quantidade FROM estoque WHERE id_hemocentro = ? AND tipo_sanguineo = ?",
+                    (id_hemocentro, tipo)
+                ).fetchone()
+
+                if existente:
+                    nova_qtd = existente[0] + qtd
+                    conn.execute(
+                        "UPDATE estoque SET quantidade = ? WHERE id_hemocentro = ? AND tipo_sanguineo = ?",
+                        (nova_qtd, id_hemocentro, tipo)
+                    )
+                else:
+                    conn.execute(
+                        "INSERT INTO estoque (id_hemocentro, tipo_sanguineo, quantidade) VALUES (?, ?, ?)",
+                        (id_hemocentro, tipo, qtd)
+                    )
+                conn.commit()
+
+            st.success(f"{qtd} unidades de {tipo} adicionadas ao estoque!")
+
+        st.markdown("---")
+        st.markdown("### ➖ Remover do Estoque")
+
+        qtd_remover = st.number_input("Quantidade a remover", min_value=1)
+
+        if st.button("Remover Estoque"):
+            with conectar() as conn:
+                existente = conn.execute(
+                    "SELECT quantidade FROM estoque WHERE id_hemocentro = ? AND tipo_sanguineo = ?",
+                    (id_hemocentro, tipo)
+                ).fetchone()
+
+                if not existente or existente[0] < qtd_remover:
+                    st.error("Quantidade insuficiente no estoque.")
+                else:
+                    nova_qtd = existente[0] - qtd_remover
+                    conn.execute(
+                        "UPDATE estoque SET quantidade = ? WHERE id_hemocentro = ? AND tipo_sanguineo = ?",
+                        (nova_qtd, id_hemocentro, tipo)
+                    )
+                    conn.commit()
+                    st.success(f"{qtd_remover} unidades removidas do estoque.")
+
+        st.markdown("---")
+        st.subheader("📊 Estoque Atual")
+
+        with conectar() as conn:
+            tabela_estoque = conn.execute(
+                '''
+                SELECT estoque.id, hemocentros.nome, estoque.tipo_sanguineo, estoque.quantidade
+                FROM estoque
+                JOIN hemocentros ON estoque.id_hemocentro = hemocentros.id
+                WHERE hemocentros.id = ?
+                ''',
+                (id_hemocentro,)
+            ).fetchall()
+
+        if tabela_estoque:
+            st.dataframe(tabela_estoque, use_container_width=True)
+        else:
+            st.info("Nenhum estoque registrado para este hemocentro.")
