@@ -1,20 +1,29 @@
 import streamlit as st
 import sqlite3
 from datetime import datetime
+import base64
 
-#IMD DE FUNDO
+# ===== CONVERTE IMAGEM LOCAL PARA BASE64 =====
+def load_image_base64(path):
+    with open(path, "rb") as img:
+        return base64.b64encode(img.read()).decode()
+
+# Carregar sua imagem enviada
+img_base64 = load_image_base64("/mnt/data/hemacia.png")
+
+#IMAGEM DE FUNDO
 st.set_page_config(page_title="Sistema de Hemocentros", page_icon="🩸", layout="wide")
 
-st.markdown("""
+st.markdown(f"""
     <style>
-        body {
-            background-image: url('https://media.istockphoto.com/id/1395646013/pt/foto/red-blood-cells-infected-by-viruses.jpg?s=612x612');
+        body {{
+            background-image: url("data:image/png;base64,{img_base64}");
             background-size: cover;
-        }
-        .stApp {
+        }}
+        .stApp {{
             background: rgba(255, 255, 255, 0.80);
             backdrop-filter: blur(4px);
-        }
+        }}
     </style>
 """, unsafe_allow_html=True)
 
